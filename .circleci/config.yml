@@ -58,7 +58,7 @@ commands:
 
 jobs:
 
-  validate cloudwatch base:
+  validate-cloudwatch-base:
     docker:
       - image: << pipeline.parameters.executor-image >>
     parameters:
@@ -114,7 +114,7 @@ workflows:
             - do/slack-webhook:
                 message: lab-platform-aws-cloudwatch-base nonprod deployment
                 webhook-url: $LAB_EVENTS_CHANNEL_WEBHOOK
-            - validate cloudwatch base:
+            - validate-cloudwatch-base:
                 name: test nonprod cloudwatch base configuration
                 context: << pipeline.parameters.context >>
                 account: nonprod
