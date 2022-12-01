@@ -1,0 +1,131 @@
+---
+version: 2.1
+
+orbs:
+  terraform: twdps/terraform@0.6.0
+  op: twdps/onepassword@1.0.0
+  do: twdps/pipeline-events@0.1.0
+
+# ==== global pipeline parameters
+
+parameters:
+  context:
+    description: circleci context for all jobs
+    type: string
+    default: twdps-core-labs-team
+  terraform-version:
+    description: terraform version for all jobs
+    type: string
+    default: "1.3.6"
+
+  executor-image:
+    description: image to use for terraform runs
+    type: string
+    default: twdps/circleci-infra-aws:alpine-1.8.0
+
+# ==== triggers
+
+on-push-main: &on-push-main
+  branches:
+    only: /main/
+  tags:
+    ignore: /.*/
+
+on-tag-main: &on-tag-main
+  branches:
+    ignore: /.*/
+  tags:
+    only: /.*/
+
+commands:
+
+  set-environment:
+    description: generate environment credentials and configuration from templates
+    parameters:
+      account:
+        description: account to be configured
+        type: string
+    steps:
+      - op/env:
+          env-file: op.<< parameters.account >>.env
+      - run:
+          name: set ~/.terraformrc
+          command: op inject -i tpl/terraformrc.tpl -o ~/.terraformrc
+      - run:
+          name: set << parameters.account >> environment variables
+          command: |
+            op inject -i environments/<< parameters.account >>.auto.tfvars.json.tpl -o << parameters.account >>.auto.tfvars.json
+
+jobs:
+
+  validate cloudwatch base:
+    docker:
+      - image: << pipeline.parameters.executor-image >>
+    parameters:
+      account:
+        description: account to be configured
+        type: string
+    steps:
+      - checkout
+      - setup_remote_docker
+      - set-environment:
+          account: << parameters.account >>
+      - run:
+          name: test << parameters.account >> configuration
+          command: bash scripts/scripts/validate_sns_topics.sh << parameters.account >>
+
+# ==== workflows
+
+workflows:
+  version: 2
+
+  deploy cloudwatch base to nonprod account:
+    jobs:
+
+      - terraform/plan:
+          name: nonprod change plan
+          context: << pipeline.parameters.context >>
+          shell: op run --env-file op.nonprod.env -- /bin/bash -eo pipefail
+          workspace: nonprod
+          terraform-version: << pipeline.parameters.terraform-version >>
+          before-terraform:
+            - set-environment:
+                account: nonprod
+          filters: *on-push-main
+
+      - approve nonprod changes:
+          type: approval
+          requires:
+            - nonprod change plan
+          filters: *on-push-main
+
+      - terraform/apply:
+          name: apply nonprod changes
+          context: << pipeline.parameters.context >>
+          shell: op run --env-file op.nonprod.env -- /bin/bash -eo pipefail
+          workspace: nonprod
+          executor-image: << pipeline.parameters.executor-image >>
+          terraform-version: << pipeline.parameters.terraform-version >>
+          before-terraform:
+            - set-environment:
+                account: nonprod
+          after-terraform:
+            - do/circle-deploy
+            - do/slack-webhook:
+                message: lab-platform-aws-cloudwatch-base nonprod deployment
+                webhook-url: $LAB_EVENTS_CHANNEL_WEBHOOK
+            - validate cloudwatch base:
+                name: test nonprod cloudwatch base configuration
+                context: << pipeline.parameters.context >>
+                account: nonprod
+          requires:
+            - approve nonprod changes
+          filters: *on-push-main
+
+      # - validate cloudwatch base:
+      #     name: test nonprod cloudwatch base configuration
+      #     context: << pipeline.parameters.context >>
+      #     account: nonprod
+      #     requires:
+      #       - apply nonprod changes
+      #     filters: *on-push-main
