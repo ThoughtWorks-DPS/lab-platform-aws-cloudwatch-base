@@ -1,24 +1,17 @@
 #!/usr/bin/env bash
 
-export SLACK_WEBHOOK_LAB_EVENTS_ARN=$(terraform output notify_slack_lab_events_arn | sed 's/"//g')
-export SLACK_WEBHOOK_LAB_ALERTS_ARN=$(terraform output notify_slack_lab_alerts_arn | sed 's/"//g')
-
 export ACCOUNT=$1
 export AWS_ACCOUNT_ID=$(cat ${ACCOUNT}.auto.tfvars.json | jq -r .aws_account_id)
 export AWS_ASSUME_ROLE=$(cat ${ACCOUNT}.auto.tfvars.json | jq -r .aws_assume_role)
 
-echo "DEBUG:"
-echo "EVENT_WEBHOOK: ${SLACK_WEBHOOK_LAB_EVENTS_ARN}"
-echo "ALERT_WEBHOOK: ${SLACK_WEBHOOK_LAB_ALERTS_ARN}"
-
-if [[ $(aws sns publish --topic-arn ${SLACK_WEBHOOK_LAB_EVENTS_ARN} --message "Pipeline test for SNS topic = Slack #lab-events channel" | grep MessageId) != "" ]]; then
+if [[ $(aws sns publish --topic-arn arn:aws:sns:us-east-2:${AWS_ACCOUNT_ID}:slack-lab-events-topic --message "Pipeline test for SNS topic = Slack #lab-events channel" | grep MessageId) != "" ]]; then
   echo "Event Message Posted"
 else
   echo "Event Message Not Posted"
   exit 1
 fi
 
-if [[ $(aws sns publish --topic-arn ${SLACK_WEBHOOK_LAB_ALERTS_ARN} --message "Pipeline test for SNS topic = Slack #lab-events channel" | grep MessageId) != "" ]]; then
+if [[ $(aws sns publish --topic-arn arn:aws:sns:us-east-2:${AWS_ACCOUNT_ID}:slack-lab-alerts-topic --message "Pipeline test for SNS topic = Slack #lab-events channel" | grep MessageId) != "" ]]; then
   echo "Alerts Message Posted"
 else
   echo "Alerts Message Not Posted"
