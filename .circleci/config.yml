@@ -110,7 +110,6 @@ workflows:
             - set-environment:
                 account: nonprod
           after-terraform:
-            - do/circle-deploy
             - do/slack-webhook:
                 message: lab-platform-aws-cloudwatch-base nonprod deployment
                 webhook-url: $LAB_EVENTS_CHANNEL_WEBHOOK
