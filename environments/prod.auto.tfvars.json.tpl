@@ -5,6 +5,5 @@
   "cluster_name": "prod-us-east-1",
 
   "slack_webhook_lab_events_url": "{{ op://empc-lab/svc-slack/lab-events }}",
-  "slack_webhook_lab_alerts_url": "{{ op://empc-lab/svc-slack/lab-prod-events }}",
+  "slack_webhook_lab_alerts_url": "{{ op://empc-lab/svc-slack/lab-prod-events }}"
 }
-  

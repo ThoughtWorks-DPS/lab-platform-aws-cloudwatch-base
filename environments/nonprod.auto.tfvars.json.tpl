@@ -5,6 +5,5 @@
   "cluster_name": "sandbox-us-east-2",
 
   "slack_webhook_lab_events_url": "{{ op://empc-lab/svc-slack/lab-events }}",
-  "slack_webhook_lab_alerts_url": "{{ op://empc-lab/svc-slack/lab-sandbox-events }}",
+  "slack_webhook_lab_alerts_url": "{{ op://empc-lab/svc-slack/lab-sandbox-events }}"
 }
-  
