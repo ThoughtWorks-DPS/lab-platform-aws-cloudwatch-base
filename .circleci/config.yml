@@ -72,7 +72,7 @@ jobs:
           account: << parameters.account >>
       - run:
           name: test << parameters.account >> configuration
-          command: bash scripts/scripts/validate_sns_topics.sh << parameters.account >>
+          command: bash scripts/validate_sns_topics.sh << parameters.account >>
 
 # ==== workflows
 
