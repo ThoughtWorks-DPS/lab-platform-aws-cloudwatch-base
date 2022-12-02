@@ -5,6 +5,9 @@ export AWS_ACCOUNT_ID=$(cat ${ACCOUNT}.auto.tfvars.json | jq -r .aws_account_id)
 export AWS_ASSUME_ROLE=$(cat ${ACCOUNT}.auto.tfvars.json | jq -r .aws_assume_role)
 export AWS_DEFAULT_REGION=$(cat ${ACCOUNT}.auto.tfvars.json | jq -r .aws_region)
 
+echo "debug:"
+echo "AWS_ACCOUNT_ID: ${AWS_ACCOUNT_ID:0:5}"
+
 if [[ $(aws sns publish --topic-arn arn:aws:sns:us-east-2:${AWS_ACCOUNT_ID}:slack-lab-events-topic --message "Pipeline test for SNS topic = Slack #lab-events channel" | grep MessageId) != "" ]]; then
   echo "Event Message Posted"
 else
