@@ -82,25 +82,52 @@ workflows:
   deploy cloudwatch base to nonprod account:
     jobs:
 
-      - terraform/plan:
-          name: nonprod change plan
-          context: << pipeline.parameters.context >>
-          shell: op run --env-file op.nonprod.env -- /bin/bash -eo pipefail
-          workspace: nonprod
-          terraform-version: << pipeline.parameters.terraform-version >>
-          before-terraform:
-            - set-environment:
-                account: nonprod
-          filters: *on-push-main
+      # - terraform/plan:
+      #     name: nonprod change plan
+      #     context: << pipeline.parameters.context >>
+      #     shell: op run --env-file op.nonprod.env -- /bin/bash -eo pipefail
+      #     workspace: nonprod
+      #     terraform-version: << pipeline.parameters.terraform-version >>
+      #     before-terraform:
+      #       - set-environment:
+      #           account: nonprod
+      #     filters: *on-push-main
 
-      - approve nonprod changes:
-          type: approval
-          requires:
-            - nonprod change plan
-          filters: *on-push-main
+      # - approve nonprod changes:
+      #     type: approval
+      #     requires:
+      #       - nonprod change plan
+      #     filters: *on-push-main
 
-      - terraform/apply:
-          name: apply nonprod changes
+      # - terraform/apply:
+      #     name: apply nonprod changes
+      #     context: << pipeline.parameters.context >>
+      #     shell: op run --env-file op.nonprod.env -- /bin/bash -eo pipefail
+      #     workspace: nonprod
+      #     executor-image: << pipeline.parameters.executor-image >>
+      #     terraform-version: << pipeline.parameters.terraform-version >>
+      #     before-terraform:
+      #       - set-environment:
+      #           account: nonprod
+      #     after-terraform:
+      #       - do/slack-webhook:
+      #           message: lab-platform-aws-cloudwatch-base nonprod deployment
+      #           webhook-url: $LAB_EVENTS_CHANNEL_WEBHOOK
+
+      #     requires:
+      #       - approve nonprod changes
+      #     filters: *on-push-main
+
+      # - validate cloudwatch base:
+      #     name: test nonprod cloudwatch base configuration
+      #     context: << pipeline.parameters.context >>
+      #     account: nonprod
+      #     requires:
+      #       - apply nonprod changes
+      #     filters: *on-push-main
+
+      - terraform/destroy:
+          name: destroy nonprod changes
           context: << pipeline.parameters.context >>
           shell: op run --env-file op.nonprod.env -- /bin/bash -eo pipefail
           workspace: nonprod
@@ -109,19 +136,3 @@ workflows:
           before-terraform:
             - set-environment:
                 account: nonprod
-          after-terraform:
-            - do/slack-webhook:
-                message: lab-platform-aws-cloudwatch-base nonprod deployment
-                webhook-url: $LAB_EVENTS_CHANNEL_WEBHOOK
-
-          requires:
-            - approve nonprod changes
-          filters: *on-push-main
-
-      - validate cloudwatch base:
-          name: test nonprod cloudwatch base configuration
-          context: << pipeline.parameters.context >>
-          account: nonprod
-          requires:
-            - apply nonprod changes
-          filters: *on-push-main
